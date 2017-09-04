@@ -10,12 +10,16 @@
  */
 package idiom;
 
+import idiom.CustomerBook;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import junit.framework.TestCase;
 
 public class IdiomTest extends TestCase {
 
     protected CustomerBook customerBook;
-    long millisecondsBeforeRunning, millisecondsAfterRunning;
 
     public void setUp() {
         customerBook = new CustomerBook();
@@ -23,32 +27,52 @@ public class IdiomTest extends TestCase {
 
     public void testAddingCustomerShouldNotTakeMoreThan50Milliseconds() {
 
-        countMillisecondsStart();
-        customerBook.addCustomerNamed("John Lennon");
-        countMillisecondsEnd();
+        //long millisecondsBeforeRunning = System.currentTimeMillis();
+        //customerBook.addCustomerNamed("John Lennon");
+        //long millisecondsAfterRunning = System.currentTimeMillis();
+        //assertTrue((millisecondsAfterRunning - millisecondsBeforeRunning) < 50);
+        
+        testTakeMoreThan(50, "John Lennon", "addCustomerNamed");
+        
 
-        assertTrue(elapsedTimeLessThan(50));
     }
 
     public void testRemovingCustomerShouldNotTakeMoreThan100Milliseconds() {
         String paulMcCartney = "Paul McCartney";
-
         customerBook.addCustomerNamed(paulMcCartney);
 
-        countMillisecondsStart();
-        customerBook.removeCustomerNamed(paulMcCartney);
-        countMillisecondsEnd();
-
-        assertTrue(elapsedTimeLessThan(100));
+        //long millisecondsBeforeRunning = System.currentTimeMillis();
+        //customerBook.removeCustomerNamed(paulMcCartney);
+        //long millisecondsAfterRunning = System.currentTimeMillis();
+        //assertTrue((millisecondsAfterRunning - millisecondsBeforeRunning) < 100);
+        
+        testTakeMoreThan(100, paulMcCartney, "removeCustomerNamed");
+        
     }
 
+    private void testTakeMoreThan(long milliseconds, String name, String metodo){
+        try {
+            Method metodoAEjecutar = customerBook.getClass().getDeclaredMethod(metodo, String.class);
+
+            long millisecondsBeforeRunning = System.currentTimeMillis();
+            metodoAEjecutar.invoke(customerBook, name);
+            long millisecondsAfterRunning = System.currentTimeMillis();
+
+            assertTrue((millisecondsAfterRunning - millisecondsBeforeRunning) < milliseconds);
+
+        } catch (Exception ex) {
+            Logger.getLogger(IdiomTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
     public void testCanNotAddACustomerWithEmptyName() {
 
         try {
             customerBook.addCustomerNamed("");
             fail();
         } catch (RuntimeException e) {
-            assertEquals(e.getMessage(), CustomerBook.CUSTOMER_NAME_EMPTY);
+            //assertEquals(e.getMessage(), CustomerBook.CUSTOMER_NAME_EMPTY);
+            assertEqualsObject(e.getMessage(), CustomerBook.CUSTOMER_NAME_EMPTY);
             assertTrue(customerBook.isEmpty());
         }
     }
@@ -59,31 +83,15 @@ public class IdiomTest extends TestCase {
             customerBook.removeCustomerNamed("John Lennon");
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals(e.getMessage(), CustomerBook.INVALID_CUSTOMER_NAME);
-            assertEquals(0, customerBook.numberOfCustomers());
+            //assertEquals(e.getMessage(), CustomerBook.INVALID_CUSTOMER_NAME);
+            //assertEquals(0, customerBook.numberOfCustomers());
+            assertEqualsObject(e.getMessage(), CustomerBook.INVALID_CUSTOMER_NAME);            
+            assertEqualsObject(0, customerBook.numberOfCustomers());
         }
     }
 
-    private void resetTimers() {
-        millisecondsBeforeRunning = 0;
-        millisecondsAfterRunning = 0;
+    private void assertEqualsObject(Object Object1, Object Object2) {
+        assertEquals(Object1, Object2);
     }
-
-    private void countMillisecondsStart() {
-        resetTimers();
-        millisecondsBeforeRunning = System.currentTimeMillis();
-    }
-
-    private void countMillisecondsEnd() {
-        millisecondsAfterRunning = System.currentTimeMillis();;
-    }
-
-    private long elapsedTime() {
-        return (millisecondsAfterRunning - millisecondsBeforeRunning);
-    }
-
-    private boolean elapsedTimeLessThan(long milliseconds) {
-        return elapsedTime() < milliseconds;
-    }
-
+     
 }
