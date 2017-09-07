@@ -8,90 +8,117 @@
  * California, 94041, USA.
  *  
  */
-package idiom;
+package main;
 
-import idiom.CustomerBook;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.junit.Test;
+
 import junit.framework.TestCase;
 
 public class IdiomTest extends TestCase {
 
-    protected CustomerBook customerBook;
+	private static final String JOHN_LENNON = "John Lennon";
+	private static final String PAUL_MC_CARTNEY = "Paul McCartney";
+	protected CustomerBook customerBook;
 
-    public void setUp() {
-        customerBook = new CustomerBook();
-    }
+	public void setUp() {
+		customerBook = new CustomerBook();
+	}
 
-    public void testAddingCustomerShouldNotTakeMoreThan50Milliseconds() {
+	public void testAlgo() {
+		runCountingMilis(50, new Runnable() {
+			@Override
+			public void run() {
+				customerBook.addCustomerNamed(JOHN_LENNON);
+			}
+		});
+	}
 
-        //long millisecondsBeforeRunning = System.currentTimeMillis();
-        //customerBook.addCustomerNamed("John Lennon");
-        //long millisecondsAfterRunning = System.currentTimeMillis();
-        //assertTrue((millisecondsAfterRunning - millisecondsBeforeRunning) < 50);
-        
-        testTakeMoreThan(50, "John Lennon", "addCustomerNamed");
-        
+	public void testRemovingCustomerShouldNotTakeMoreThan100Milliseconds()
+			throws NoSuchMethodException, SecurityException,
+			IllegalAccessException, IllegalArgumentException,
+			InvocationTargetException {
+		customerBook.addCustomerNamed(PAUL_MC_CARTNEY);
+		runCountingMilis(100, new Runnable() {
+			@Override
+			public void run() {
+				customerBook.removeCustomerNamed(PAUL_MC_CARTNEY);
+			}
+		});
+	}
 
-    }
+	public void runCountingMilis(int milis, Runnable runnable) {
+		long millisecondsBeforeRunning = System.currentTimeMillis();
+		runnable.run();
+		long millisecondsAfterRunning = System.currentTimeMillis();
+		assertTrue((millisecondsAfterRunning - millisecondsBeforeRunning) < milis);
+	}
 
-    public void testRemovingCustomerShouldNotTakeMoreThan100Milliseconds() {
-        String paulMcCartney = "Paul McCartney";
-        customerBook.addCustomerNamed(paulMcCartney);
+	public void testCanNotAddACustomerWithEmptyName() {
+		testWithTry(new TryTest(new Runnable() {
+			@Override
+			public void run() {
+				customerBook.addCustomerNamed("");
+			}
+		}, RuntimeException.class) {
+			@Override
+			protected void assertion(Exception exception) {
+				assertEquals(exception.getMessage(),
+						CustomerBook.CUSTOMER_NAME_EMPTY);
+				assertTrue(customerBook.isEmpty());
+			}
+		});
+	}
 
-        //long millisecondsBeforeRunning = System.currentTimeMillis();
-        //customerBook.removeCustomerNamed(paulMcCartney);
-        //long millisecondsAfterRunning = System.currentTimeMillis();
-        //assertTrue((millisecondsAfterRunning - millisecondsBeforeRunning) < 100);
-        
-        testTakeMoreThan(100, paulMcCartney, "removeCustomerNamed");
-        
-    }
+	public void testCanNotRemoveNotAddedCustomers() {
+		testWithTry(new TryTest(new Runnable() {
+			@Override
+			public void run() {
+				customerBook.removeCustomerNamed(JOHN_LENNON);
+			}
+		}, IllegalArgumentException.class) {
+			@Override
+			protected void assertion(Exception exception) {
+				assertEquals(exception.getMessage(),
+						CustomerBook.INVALID_CUSTOMER_NAME);
+				assertTrue(customerBook.isEmpty());
+			}
+		});
+	}
 
-    private void testTakeMoreThan(long milliseconds, String name, String metodo){
-        try {
-            Method metodoAEjecutar = customerBook.getClass().getDeclaredMethod(metodo, String.class);
+	public void testWithTry(TryTest test) {
+		try {
+			test.run();
+			fail();
+		} catch (Exception e) {
+			test.doAssert(e);
+		}
+	}
 
-            long millisecondsBeforeRunning = System.currentTimeMillis();
-            metodoAEjecutar.invoke(customerBook, name);
-            long millisecondsAfterRunning = System.currentTimeMillis();
+	public abstract class TryTest implements Runnable {
 
-            assertTrue((millisecondsAfterRunning - millisecondsBeforeRunning) < milliseconds);
+		private Runnable before;
 
-        } catch (Exception ex) {
-            Logger.getLogger(IdiomTest.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
-    
-    public void testCanNotAddACustomerWithEmptyName() {
+		private Class<? extends Throwable> clazz;
 
-        try {
-            customerBook.addCustomerNamed("");
-            fail();
-        } catch (RuntimeException e) {
-            //assertEquals(e.getMessage(), CustomerBook.CUSTOMER_NAME_EMPTY);
-            assertEqualsObject(e.getMessage(), CustomerBook.CUSTOMER_NAME_EMPTY);
-            assertTrue(customerBook.isEmpty());
-        }
-    }
+		protected abstract void assertion(Exception exception);
 
-    public void testCanNotRemoveNotAddedCustomers() {
+		public final void doAssert(Exception exception) {
+			if (clazz.isInstance(exception)) {
+				assertion(exception);
+			}
+		}
 
-        try {
-            customerBook.removeCustomerNamed("John Lennon");
-            fail();
-        } catch (IllegalArgumentException e) {
-            //assertEquals(e.getMessage(), CustomerBook.INVALID_CUSTOMER_NAME);
-            //assertEquals(0, customerBook.numberOfCustomers());
-            assertEqualsObject(e.getMessage(), CustomerBook.INVALID_CUSTOMER_NAME);            
-            assertEqualsObject(0, customerBook.numberOfCustomers());
-        }
-    }
+		public TryTest(Runnable before, Class clazz) {
+			this.before = before;
+			this.clazz = clazz;
+		}
 
-    private void assertEqualsObject(Object Object1, Object Object2) {
-        assertEquals(Object1, Object2);
-    }
-     
+		public void run() {
+			before.run();
+		}
+	}
+
 }
