@@ -11,9 +11,6 @@
 package main;
 
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-
-import org.junit.Test;
 
 import junit.framework.TestCase;
 
@@ -27,7 +24,7 @@ public class IdiomTest extends TestCase {
 		customerBook = new CustomerBook();
 	}
 
-	public void testAlgo() {
+	public void testAddingCustomerShouldNotTakeMoreThan50Milliseconds() {
 		runCountingMilis(50, new Runnable() {
 			@Override
 			public void run() {
@@ -47,13 +44,6 @@ public class IdiomTest extends TestCase {
 				customerBook.removeCustomerNamed(PAUL_MC_CARTNEY);
 			}
 		});
-	}
-
-	public void runCountingMilis(int milis, Runnable runnable) {
-		long millisecondsBeforeRunning = System.currentTimeMillis();
-		runnable.run();
-		long millisecondsAfterRunning = System.currentTimeMillis();
-		assertTrue((millisecondsAfterRunning - millisecondsBeforeRunning) < milis);
 	}
 
 	public void testCanNotAddACustomerWithEmptyName() {
@@ -86,6 +76,13 @@ public class IdiomTest extends TestCase {
 				assertTrue(customerBook.isEmpty());
 			}
 		});
+	}
+	
+	public void runCountingMilis(int milis, Runnable runnable) {
+		long millisecondsBeforeRunning = System.currentTimeMillis();
+		runnable.run();
+		long millisecondsAfterRunning = System.currentTimeMillis();
+		assertTrue((millisecondsAfterRunning - millisecondsBeforeRunning) < milis);
 	}
 
 	public void testWithTry(TryTest test) {
